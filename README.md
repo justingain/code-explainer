@@ -76,7 +76,7 @@ It then walks the tree to identify:
 
 This approach ensures more accurate analysis compared to simple string matching.
 
-⸻
+---
 
 ## 🔮 Future Improvements
 
@@ -85,7 +85,7 @@ This approach ensures more accurate analysis compared to simple string matching.
 * Output structured JSON for integration with other tools
 * Optional integration with AI-based code explanation
 
-⸻
+---
 
 ## 📄 License
 
