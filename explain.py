@@ -1,9 +1,18 @@
 import sys
+import ast
 from pathlib import Path
 
 def analyze_file(file_path):
+    """
+    Analyze a Python file and extract structural information such as:
+    - number of lines
+    - imports
+    - classes
+    - functions
+    """
     path = Path(file_path)
 
+    # Validate that the file exists and is a proper file
     if not path.exists():
         print(f"Error: File '{file_path}' does not exist.")
         return
@@ -12,29 +21,50 @@ def analyze_file(file_path):
         print(f"Error: '{file_path}' is not a file.")
         return
     
+    # Read the file contents
     try:
         with open(path, "r", encoding="utf-8") as file:
-            lines = file.readlines()
+            source_code = file.read()
     except Exception as error:
         print(f"Error reading file: {error}")
         return
     
+    # Parse the file into an Abstract Syntax Tree (AST)
+    # This allows us to analyze structure instead of raw text
+    try:
+        tree = ast.parse(source_code)
+    except SyntaxError as error:
+        print(f"Syntax error while parsing file: {error}")
+        return
+    
+    lines = source_code.splitlines()
     num_lines = len(lines)
 
     functions = []
     classes = []
     imports = []
 
-    for line in lines:
-        stripped = line.strip()
+    # Walk through every node in the AST and categorize it
+    for node in ast.walk(tree):
+        # Detect import statements (e.g., import math)
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports.append(alias.name)
+        
+        # Detect "from x import y" statements
+        elif isinstance(node, ast.ImportFrom):
+            module_name = node.module if node.module else "unknown"
+            imports.append(f"from {module_name}")
+        
+        # Detect class definitions
+        elif isinstance(node, ast.ClassDef):
+            classes.append(node.name)
+        
+        # Detect function definitions (including class methods)
+        elif isinstance(node, ast.FunctionDef):
+            functions.append(node.name)
 
-        if stripped.startswith("def "):
-            functions.append(stripped)
-        elif stripped.startswith("class "):
-            classes.append(stripped)
-        elif stripped.startswith("import ") or stripped.startswith("from "):
-            imports.append(stripped)
-
+    # Output results
     print("\n Code Analysis\n")
     print(f"File: {path.name}")
     print(f"Total lines: {num_lines}")
@@ -74,6 +104,7 @@ def build_summary(num_lines, imports, classes, functions):
 
     summary = ", ".join(parts) + "."
 
+    # Add a basic classification of the script type
     if functions and not classes:
         summary += " It appears to be a function-based script"
     elif classes:
